@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  student            @map("student")
+  personal_trainer   @map("personal-trainer")
+  admin              @map("admin")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          UserRole
+  phone_number  String?
+  avatar_url    String?
+  city          String?
+  state         String?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+
+  sessions  Session[]
+  favorites Favorite[]
+  trainer   PersonalTrainer?
+
+  @@map("users")
+}
+
+model Session {
+  id                   String   @id @default(uuid())
+  token                String   @unique
+  user_id              String
+  impersonator_user_id String?
+  created_at           DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model PersonalTrainer {
+  id               String   @id
+  user_id          String?  @unique
+  name             String
+  profession       String
+  description      String
+  photo_url        String
+  service_price    Int
+  contact_phone    String?
+  rating           Float?
+  review_count     Int?
+  distance_km      Float?
+  city             String?
+  state            String?
+  specialties      String[]
+  modalities       String[]
+  cref             String?
+  gallery          String[]
+  availability     String?
+  experience_years Int?
+  reviews          Json?
+  featured         Boolean  @default(false)
+  promotion        Json?
+
+  user      User?      @relation(fields: [user_id], references: [id])
+  favorites Favorite[]
+
+  @@map("personal_trainers")
+}
+
+model Favorite {
+  user_id    String
+  trainer_id String
+
+  user    User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trainer PersonalTrainer @relation(fields: [trainer_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, trainer_id])
+  @@map("favorites")
+}
+
+enum ReportStatus {
+  pending
+  in_review
+  resolved
+  archived
+}
+
+model Report {
+  id            String       @id @default(uuid())
+  type          String
+  occurred_at   DateTime
+  trainer_id    String
+  description   String
+  contact_email String
+  status        ReportStatus @default(pending)
+  resolved_at   DateTime?
+  resolved_by   String?
+  created_at    DateTime     @default(now())
+
+  @@map("reports")
+}
+
+model AdminImpersonationLog {
+  id             String   @id @default(uuid())
+  admin_user_id  String
+  target_user_id String
+  target_name    String
+  target_role    UserRole
+  accessed_at    DateTime @default(now())
+
+  @@index([admin_user_id, accessed_at(sort: Desc)])
+  @@map("admin_impersonation_logs")
+}

@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  fatal-trainer-pg:
+    image: bitnami/postgresql:latest
+    container_name: fatal-trainer-pg
+    environment:
+      - POSTGRESQL_USERNAME=docker
+      - POSTGRESQL_PASSWORD=docker
+      - POSTGRESQL_DATABASE=fatal_trainer
+    ports:
+      - '5432:5432'
