@@ -1,0 +1,67 @@
+#################################################################
+# Fatal Trainer API — Render Blueprint
+#
+# Deploy (primeiro — antes do front):
+#   1. Push para o branch conectado ao GitHub
+#   2. Render Dashboard → New Blueprint → selecione o repositório
+#   3. Em "Blueprint file path", informe: fatal-trainer-backend/render.yaml
+#   4. Confirme PostgreSQL + Web Service
+#   5. Aguarde migrate + seed (primeiro deploy)
+#
+# Validar:
+#   https://fatal-trainer-api.onrender.com/api/personal-trainers?page=1&pageSize=5
+#
+# Seed users (senha: 123456):
+#   aluno@fataltrainer.com, personal@fataltrainer.com, bruno@fataltrainer.com
+#
+# Notes:
+#   - NODE_ENV deve ser "prod" (não "production") — src/env/index.ts
+#   - Auth cookies cross-origin podem falhar até ajuste em session.ts
+#   - STORAGE_DRIVER=local: uploads somem no redeploy (fotos do seed via Pexels OK)
+#################################################################
+
+databases:
+  - name: fatal-trainer-db
+    plan: free
+    databaseName: fatal_trainer
+    user: fatal_trainer
+
+services:
+  - type: web
+    name: fatal-trainer-api
+    runtime: node
+    plan: free
+    rootDir: fatal-trainer-backend
+    buildFilter:
+      paths:
+        - fatal-trainer-backend/**
+    buildCommand: pnpm install --frozen-lockfile && pnpm exec prisma generate && pnpm run build
+    preDeployCommand: pnpm exec prisma migrate deploy
+    initialDeployHook: pnpm run db:seed
+    startCommand: pnpm run prod
+    healthCheckPath: /api/personal-trainers?page=1&pageSize=1
+    envVars:
+      - key: NODE_ENV
+        value: prod
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fatal-trainer-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STORAGE_DRIVER
+        value: local
+      - key: UPLOAD_DIR
+        value: ./uploads
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: CDN_BASE_URL
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
