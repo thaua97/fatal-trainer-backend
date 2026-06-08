@@ -6,4 +6,5 @@ export const ERROR_CODES = {
   conflict: 'error.conflict',
   internal: 'error.internal',
   invalidCredentials: 'error.invalidCredentials',
+  accountDeactivated: 'error.accountDeactivated',
 } as const

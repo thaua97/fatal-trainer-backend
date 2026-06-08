@@ -9,7 +9,7 @@ import {
   InMemorySessionsRepository,
   InMemoryUsersRepository,
 } from '@/utils/tests/repositories/in-memory-users-repository'
-import { InvalidCredentialsError, UserAlreadyExistsError } from '@/domain/shared/errors/domain-errors'
+import { AccountDeactivatedError, InvalidCredentialsError, UserAlreadyExistsError } from '@/domain/shared/errors/domain-errors'
 
 describe('Auth use cases', () => {
   it('registers and authenticates users', async () => {
@@ -58,6 +58,23 @@ describe('Auth use cases', () => {
     const authenticate = new AuthenticateUserUseCase(usersRepository)
     await expect(authenticate.execute('exists@example.com', 'wrong12')).rejects.toBeInstanceOf(
       InvalidCredentialsError,
+    )
+  })
+
+  it('rejects inactive users with a dedicated error', async () => {
+    const usersRepository = new InMemoryUsersRepository()
+    usersRepository.items.push({
+      id: 'inactive-1',
+      name: 'Inactive User',
+      email: 'inactive@example.com',
+      passwordHash: await hash('123456', 10),
+      role: 'student',
+      isActive: false,
+    })
+
+    const authenticate = new AuthenticateUserUseCase(usersRepository)
+    await expect(authenticate.execute('inactive@example.com', '123456')).rejects.toBeInstanceOf(
+      AccountDeactivatedError,
     )
   })
 

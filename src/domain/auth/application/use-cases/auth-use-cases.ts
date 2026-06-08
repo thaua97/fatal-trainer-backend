@@ -1,5 +1,6 @@
 import { hash } from 'bcryptjs'
 import {
+  AccountDeactivatedError,
   InvalidCredentialsError,
   UserAlreadyExistsError,
   ValidationError,
@@ -51,7 +52,7 @@ export class AuthenticateUserUseCase {
     }
 
     if (!user.isActive) {
-      throw new InvalidCredentialsError()
+      throw new AccountDeactivatedError()
     }
 
     const { compare } = await import('bcryptjs')

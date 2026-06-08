@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { mapErrorToResponse } from '@/infra/http/errors/map-error-to-response'
 import { ERROR_CODES } from '@/infra/http/errors/error-codes'
 import {
+  AccountDeactivatedError,
   ConflictError,
   ForbiddenError,
   InvalidCredentialsError,
@@ -18,6 +19,10 @@ describe('mapErrorToResponse', () => {
     expect(mapErrorToResponse(new ValidationError({ email: 'invalid' }))).toEqual({
       statusCode: 400,
       body: { message: ERROR_CODES.validation, errors: { email: 'invalid' } },
+    })
+    expect(mapErrorToResponse(new AccountDeactivatedError())).toEqual({
+      statusCode: 403,
+      body: { message: ERROR_CODES.accountDeactivated },
     })
     expect(mapErrorToResponse(new InvalidCredentialsError())).toEqual({
       statusCode: 401,

@@ -12,6 +12,13 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+export class AccountDeactivatedError extends Error {
+  constructor() {
+    super('Account deactivated')
+    this.name = 'AccountDeactivatedError'
+  }
+}
+
 export class UserAlreadyExistsError extends Error {
   constructor() {
     super('User already exists')

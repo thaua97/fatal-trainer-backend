@@ -1,4 +1,5 @@
 import {
+  AccountDeactivatedError,
   ConflictError,
   ForbiddenError,
   InvalidCredentialsError,
@@ -66,6 +67,15 @@ export function mapErrorToResponse(error: unknown): ErrorResponse {
       body: {
         message: ERROR_CODES.validation,
         errors: error.errors,
+      },
+    }
+  }
+
+  if (error instanceof AccountDeactivatedError) {
+    return {
+      statusCode: 403,
+      body: {
+        message: ERROR_CODES.accountDeactivated,
       },
     }
   }
