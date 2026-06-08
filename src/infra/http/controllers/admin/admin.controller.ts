@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import {
   makeAdminLoginUseCase,
   makeCreateAdminUserUseCase,
+  makeDeleteAdminUserUseCase,
   makeCreateSessionUseCase,
   makeCreateAdminUserNoteUseCase,
   makeDeactivateTrainerFromReportUseCase,
@@ -18,8 +19,13 @@ import {
   makeToggleTrainerFeaturedUseCase,
   makeUpdateAdminUserUseCase,
   makeUpdateReportStatusUseCase,
+  makeListPromotionTemplatesUseCase,
+  makeGetPromotionTemplateUseCase,
+  makeCreatePromotionTemplateUseCase,
+  makeUpdatePromotionTemplateUseCase,
+  makeDeletePromotionTemplateUseCase,
 } from '../../factories/make-use-cases'
-import { mapErrorToResponse } from '../../errors/map-error-to-response'
+import { ValidationError } from '@/domain/shared/errors/domain-errors'
 import {
   clearAdminBackupCookie,
   clearSessionCookie,
@@ -87,9 +93,36 @@ const updateReportSchema = z.object({
   status: z.enum(['pending', 'in_review', 'resolved', 'archived']),
 })
 
+const listPromotionsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(100).default(20),
+  search: z.string().optional(),
+  isActive: z.coerce.boolean().optional(),
+  status: z.enum(['active', 'upcoming', 'expired']).optional(),
+})
+
+const createPromotionSchema = z.object({
+  name: z.string(),
+  label: z.string(),
+  discountPercent: z.number(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  maxRedemptions: z.number().nullable().optional(),
+  isActive: z.boolean().optional(),
+})
+
+const updatePromotionSchema = z.object({
+  name: z.string().optional(),
+  label: z.string().optional(),
+  discountPercent: z.number().optional(),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
+  maxRedemptions: z.number().nullable().optional(),
+  isActive: z.boolean().optional(),
+})
+
 export async function adminRoutes(app: FastifyInstance) {
   app.post('/admin/auth/login', async (request, reply) => {
-    try {
       const body = loginSchema.parse(request.body)
       const useCase = makeAdminLoginUseCase()
       const user = await useCase.execute(body.email, body.password)
@@ -100,122 +133,85 @@ export async function adminRoutes(app: FastifyInstance) {
       setSessionCookie(reply, token)
 
       return reply.send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.get('/admin/users', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const query = listUsersSchema.parse(request.query)
       const useCase = makeListAdminUsersUseCase()
       const result = await useCase.execute(query)
       return reply.send(result)
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.post('/admin/users', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const body = createUserSchema.parse(request.body)
       const useCase = makeCreateAdminUserUseCase()
       const user = await useCase.execute(body)
       return reply.status(201).send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.get('/admin/users/:id', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const useCase = makeGetAdminUserDetailUseCase()
       const user = await useCase.execute(id)
       return reply.send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.get('/admin/users/:id/activity', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const query = listActivitySchema.parse(request.query)
       const useCase = makeListAdminUserActivityUseCase()
       const result = await useCase.execute(id, query)
       return reply.send(result)
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.get('/admin/users/:id/notes', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const useCase = makeListAdminUserNotesUseCase()
       const result = await useCase.execute(id)
       return reply.send(result)
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.post('/admin/users/:id/notes', async (request, reply) => {
-    try {
       const admin = await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const body = createNoteSchema.parse(request.body)
       const useCase = makeCreateAdminUserNoteUseCase()
       const result = await useCase.execute(id, admin.id, admin.name, body.content)
       return reply.status(201).send(result)
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.patch('/admin/users/:id', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const body = updateUserSchema.parse(request.body)
       const useCase = makeUpdateAdminUserUseCase()
       const user = await useCase.execute(id, body)
       return reply.send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
+  })
+
+  app.delete('/admin/users/:id', async (request, reply) => {
+      const admin = await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const useCase = makeDeleteAdminUserUseCase()
+      await useCase.execute(admin.id, id)
+      return reply.status(204).send()
   })
 
   app.patch('/admin/users/:id/featured', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const body = toggleFeaturedSchema.parse(request.body)
       const useCase = makeToggleTrainerFeaturedUseCase()
       const user = await useCase.execute(id, body.featured)
       return reply.send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.post('/admin/users/:id/impersonate', async (request, reply) => {
-    try {
       const admin = await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const useCase = makeImpersonateUserUseCase()
@@ -237,30 +233,20 @@ export async function adminRoutes(app: FastifyInstance) {
       setSessionCookie(reply, token)
 
       return reply.send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.get('/admin/impersonation/recent', async (request, reply) => {
-    try {
       const admin = await requireAdminSession(request)
       const query = listRecentAccessSchema.parse(request.query)
       const useCase = makeListRecentImpersonationAccessUseCase()
       const items = await useCase.execute(admin.id, query.limit)
       return reply.send({ items })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.post('/admin/impersonation/exit', async (request, reply) => {
-    try {
       const sessionUser = await requireSession(request)
       if (!sessionUser.isImpersonating) {
-        return reply.status(400).send({ message: 'Not impersonating' })
+        throw new ValidationError({ impersonation: 'notActive' })
       }
 
       const currentToken = request.cookies[SESSION_COOKIE]
@@ -279,49 +265,71 @@ export async function adminRoutes(app: FastifyInstance) {
       }
 
       return reply.send({ success: true })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.get('/admin/reports', async (request, reply) => {
-    try {
       await requireAdminSession(request)
       const query = listReportsSchema.parse(request.query)
       const useCase = makeListAdminReportsUseCase()
       const result = await useCase.execute(query)
       return reply.send(result)
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.patch('/admin/reports/:id', async (request, reply) => {
-    try {
       const admin = await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const body = updateReportSchema.parse(request.body)
       const useCase = makeUpdateReportStatusUseCase()
       const report = await useCase.execute(id, body.status, admin.id)
       return reply.send({ report })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
   })
 
   app.post('/admin/reports/:id/deactivate-trainer', async (request, reply) => {
-    try {
       const admin = await requireAdminSession(request)
       const { id } = request.params as { id: string }
       const useCase = makeDeactivateTrainerFromReportUseCase()
       const report = await useCase.execute(id, admin.id)
       return reply.send({ report })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
+  })
+
+  app.get('/admin/promotions', async (request, reply) => {
+      await requireAdminSession(request)
+      const query = listPromotionsSchema.parse(request.query)
+      const useCase = makeListPromotionTemplatesUseCase()
+      const result = await useCase.execute(query)
+      return reply.send(result)
+  })
+
+  app.post('/admin/promotions', async (request, reply) => {
+      await requireAdminSession(request)
+      const body = createPromotionSchema.parse(request.body)
+      const useCase = makeCreatePromotionTemplateUseCase()
+      const promotion = await useCase.execute(body)
+      return reply.status(201).send({ promotion })
+  })
+
+  app.get('/admin/promotions/:id', async (request, reply) => {
+      await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const useCase = makeGetPromotionTemplateUseCase()
+      const promotion = await useCase.execute(id)
+      return reply.send({ promotion })
+  })
+
+  app.patch('/admin/promotions/:id', async (request, reply) => {
+      await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const body = updatePromotionSchema.parse(request.body)
+      const useCase = makeUpdatePromotionTemplateUseCase()
+      const promotion = await useCase.execute(id, body)
+      return reply.send({ promotion })
+  })
+
+  app.delete('/admin/promotions/:id', async (request, reply) => {
+      await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const useCase = makeDeletePromotionTemplateUseCase()
+      await useCase.execute(id)
+      return reply.status(204).send()
   })
 }

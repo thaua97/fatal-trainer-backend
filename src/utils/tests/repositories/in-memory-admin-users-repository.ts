@@ -58,4 +58,8 @@ export class InMemoryAdminUsersRepository implements AdminUsersRepository {
   async emailExists(_email: string, _excludeId?: string): Promise<boolean> {
     return false
   }
+
+  async delete(id: string): Promise<void> {
+    this.items = this.items.filter(user => user.id !== id)
+  }
 }

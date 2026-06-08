@@ -1,6 +1,7 @@
 export type TrainerModality = 'presencial' | 'online' | 'hibrido'
 
 export interface TrainerPromotion {
+  templateId?: string
   discountPercent?: number
   promoPrice: number
   label?: string

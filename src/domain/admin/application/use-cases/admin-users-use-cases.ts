@@ -117,6 +117,23 @@ export class ToggleTrainerFeaturedUseCase {
   }
 }
 
+export class DeleteAdminUserUseCase {
+  constructor(private readonly adminUsersRepository: AdminUsersRepository) {}
+
+  async execute(adminUserId: string, targetUserId: string): Promise<void> {
+    if (adminUserId === targetUserId) {
+      throw new ForbiddenError()
+    }
+
+    const user = await this.adminUsersRepository.findById(targetUserId)
+    if (!user) {
+      throw new ResourceNotFoundError()
+    }
+
+    await this.adminUsersRepository.delete(targetUserId)
+  }
+}
+
 export class ImpersonateUserUseCase {
   constructor(
     private readonly adminUsersRepository: AdminUsersRepository,
@@ -125,6 +142,10 @@ export class ImpersonateUserUseCase {
   ) {}
 
   async execute(adminUserId: string, targetUserId: string): Promise<AuthUser> {
+    if (adminUserId === targetUserId) {
+      throw new ForbiddenError()
+    }
+
     const user = await this.adminUsersRepository.findById(targetUserId)
     if (!user) {
       throw new ResourceNotFoundError()

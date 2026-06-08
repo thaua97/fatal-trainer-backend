@@ -35,6 +35,7 @@ import { UpsertTrainerReviewUseCase } from '@/domain/reviews/application/use-cas
 import {
   AdminLoginUseCase,
   CreateAdminUserUseCase,
+  DeleteAdminUserUseCase,
   ImpersonateUserUseCase,
   ListAdminUsersUseCase,
   ToggleTrainerFeaturedUseCase,
@@ -56,8 +57,18 @@ import {
   ListAdminUserNotesUseCase,
 } from '@/domain/admin/application/use-cases/admin-user-profile-use-cases'
 import { PrismaAdminUserProfileRepository } from '@/infra/database/prisma/repositories/prisma-admin-user-profile-repository'
+import { PrismaPromotionTemplatesRepository } from '@/infra/database/prisma/repositories/prisma-promotion-templates-repository'
+import {
+  CreatePromotionTemplateUseCase,
+  DeletePromotionTemplateUseCase,
+  GetPromotionTemplateUseCase,
+  ListAvailablePromotionTemplatesUseCase,
+  ListPromotionTemplatesUseCase,
+  UpdatePromotionTemplateUseCase,
+} from '@/domain/admin/application/use-cases/admin-promotion-templates-use-cases'
 
 const trainersRepository = new PrismaPersonalTrainersRepository()
+const promotionTemplatesRepository = new PrismaPromotionTemplatesRepository()
 const usersRepository = new PrismaUsersRepository()
 const sessionsRepository = new PrismaSessionsRepository()
 const favoritesRepository = new PrismaFavoritesRepository()
@@ -85,7 +96,11 @@ export function makeGetOrCreateMyTrainerUseCase() {
 }
 
 export function makeUpdateMyTrainerUseCase() {
-  return new UpdateMyTrainerUseCase(trainersRepository, usersRepository)
+  return new UpdateMyTrainerUseCase(
+    trainersRepository,
+    usersRepository,
+    promotionTemplatesRepository,
+  )
 }
 
 export function makeUploadGalleryImageUseCase() {
@@ -180,6 +195,10 @@ export function makeToggleTrainerFeaturedUseCase() {
   return new ToggleTrainerFeaturedUseCase(adminUsersRepository)
 }
 
+export function makeDeleteAdminUserUseCase() {
+  return new DeleteAdminUserUseCase(adminUsersRepository)
+}
+
 export function makeImpersonateUserUseCase() {
   return new ImpersonateUserUseCase(
     adminUsersRepository,
@@ -220,4 +239,28 @@ export function makeDeactivateTrainerFromReportUseCase() {
   return new DeactivateTrainerFromReportUseCase(adminReportsRepository)
 }
 
-export { trainersRepository, usersRepository }
+export function makeListPromotionTemplatesUseCase() {
+  return new ListPromotionTemplatesUseCase(promotionTemplatesRepository)
+}
+
+export function makeGetPromotionTemplateUseCase() {
+  return new GetPromotionTemplateUseCase(promotionTemplatesRepository)
+}
+
+export function makeCreatePromotionTemplateUseCase() {
+  return new CreatePromotionTemplateUseCase(promotionTemplatesRepository)
+}
+
+export function makeUpdatePromotionTemplateUseCase() {
+  return new UpdatePromotionTemplateUseCase(promotionTemplatesRepository)
+}
+
+export function makeDeletePromotionTemplateUseCase() {
+  return new DeletePromotionTemplateUseCase(promotionTemplatesRepository)
+}
+
+export function makeListAvailablePromotionTemplatesUseCase() {
+  return new ListAvailablePromotionTemplatesUseCase(promotionTemplatesRepository)
+}
+
+export { trainersRepository, usersRepository, promotionTemplatesRepository }

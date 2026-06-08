@@ -6,6 +6,7 @@ import { generateMockTrainers } from '../src/utils/tests/factories/make-personal
 import { mapTrainerToPrisma } from '../src/infra/database/prisma/mappers/prisma-mapper'
 import { seedUsers } from './seeds/users'
 import { seedReviewStudents, seedTrainerReviewsFromJson } from './seeds/reviews'
+import { seedPromotionTemplates } from './seeds/promotion-templates'
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
@@ -22,6 +23,7 @@ async function main() {
   await prisma.user.deleteMany()
 
   await seedUsers(prisma)
+  await seedPromotionTemplates(prisma)
 
   const batchSize = 50
   for (let i = 0; i < trainers.length; i += batchSize) {

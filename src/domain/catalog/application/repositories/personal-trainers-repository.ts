@@ -1,7 +1,7 @@
 import type { PersonalTrainer } from '../../enterprise/entities/personal-trainer'
 import type {
   TrainerInfoPayload,
-  TrainerPromotionPayload,
+  TrainerPromotionActivationPayload,
 } from '../../enterprise/entities/trainer-profile-payloads'
 
 export interface PaginatedTrainersResult {
@@ -21,7 +21,10 @@ export interface PersonalTrainersRepository {
   create(trainer: PersonalTrainer): Promise<void>
   save(trainer: PersonalTrainer): Promise<void>
   updateInfo(trainerId: string, payload: TrainerInfoPayload): Promise<PersonalTrainer>
-  updatePromotion(trainerId: string, payload: TrainerPromotionPayload): Promise<PersonalTrainer>
+  updatePromotion(
+    trainerId: string,
+    payload: TrainerPromotionActivationPayload,
+  ): Promise<PersonalTrainer>
   addGalleryImage(trainerId: string, imageUrl: string): Promise<PersonalTrainer>
   removeGalleryImage(trainerId: string, imageIndex: number): Promise<PersonalTrainer>
   setCoverPhoto(trainerId: string, imageUrl: string): Promise<PersonalTrainer>

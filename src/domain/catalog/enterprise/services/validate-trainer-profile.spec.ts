@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { validateTrainerInfo, validateTrainerPromotion } from './validate-trainer-profile'
+import {
+  validateTrainerInfo,
+  validateTrainerPromotionActivation,
+} from './validate-trainer-profile'
 
 describe('validate-trainer-profile', () => {
   it('validates trainer info', () => {
@@ -38,33 +41,26 @@ describe('validate-trainer-profile', () => {
     expect(valid.valid).toBe(true)
   })
 
-  it('validates trainer promotion', () => {
-    const inactive = validateTrainerPromotion(
-      {
-        active: false,
-        discountPercent: 0,
-        label: '',
-        startsAt: '',
-        endsAt: '',
-        maxRedemptions: null,
-      },
+  it('validates trainer promotion activation', () => {
+    const inactive = validateTrainerPromotionActivation(
+      { templateId: null },
       100,
     )
 
     expect(inactive.valid).toBe(true)
 
-    const active = validateTrainerPromotion(
-      {
-        active: true,
-        discountPercent: 20,
-        label: 'Promo',
-        startsAt: '2026-06-01',
-        endsAt: '2026-06-30',
-        maxRedemptions: 10,
-      },
+    const active = validateTrainerPromotionActivation(
+      { templateId: 'template-id' },
       100,
     )
 
     expect(active.valid).toBe(true)
+
+    const noPrice = validateTrainerPromotionActivation(
+      { templateId: 'template-id' },
+      0,
+    )
+
+    expect(noPrice.valid).toBe(false)
   })
 })

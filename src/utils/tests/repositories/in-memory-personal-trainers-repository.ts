@@ -1,13 +1,18 @@
 import type { PersonalTrainer } from '@/domain/catalog/enterprise/entities/personal-trainer'
 import type {
   TrainerInfoPayload,
-  TrainerPromotionPayload,
+  TrainerPromotionActivationPayload,
 } from '@/domain/catalog/enterprise/entities/trainer-profile-payloads'
 import type { PersonalTrainersRepository } from '@/domain/catalog/application/repositories/personal-trainers-repository'
-import { computePromoPrice } from '@/domain/catalog/enterprise/services/trainer-pricing'
+import { hydratePromotionFromTemplate } from '@/domain/catalog/enterprise/services/promotion-hydration'
+import type { InMemoryPromotionTemplatesRepository } from './in-memory-promotion-templates-repository'
 
 export class InMemoryPersonalTrainersRepository implements PersonalTrainersRepository {
   public items: PersonalTrainer[] = []
+
+  constructor(
+    private readonly templatesRepository?: InMemoryPromotionTemplatesRepository,
+  ) {}
 
   async findAll(): Promise<PersonalTrainer[]> {
     return this.items
@@ -71,22 +76,32 @@ export class InMemoryPersonalTrainersRepository implements PersonalTrainersRepos
 
   async updatePromotion(
     trainerId: string,
-    payload: TrainerPromotionPayload,
+    payload: TrainerPromotionActivationPayload,
   ): Promise<PersonalTrainer> {
     const current = await this.findById(trainerId)
     if (!current) throw new Error('Trainer not found')
 
-    current.props.promotion = payload.active
-      ? {
-          discountPercent: payload.discountPercent,
-          promoPrice: computePromoPrice(current.props.servicePrice, payload.discountPercent),
-          label: payload.label.trim(),
-          startsAt: payload.startsAt,
-          endsAt: payload.endsAt,
-          maxRedemptions: payload.maxRedemptions ?? undefined,
-          redemptionCount: current.props.promotion?.redemptionCount ?? 0,
-        }
-      : undefined
+    if (!payload.templateId) {
+      current.props.promotion = undefined
+      return current
+    }
+
+    const template = await this.templatesRepository?.findById(payload.templateId)
+    if (!template) throw new Error('Promotion template not found')
+
+    const hydrated = hydratePromotionFromTemplate(
+      {
+        templateId: payload.templateId,
+        redemptionCount:
+          current.props.promotion?.templateId === payload.templateId
+            ? (current.props.promotion?.redemptionCount ?? 0)
+            : 0,
+      },
+      template,
+      current.props.servicePrice,
+    )
+
+    current.props.promotion = hydrated
 
     return current
   }

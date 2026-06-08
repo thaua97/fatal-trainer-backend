@@ -1,9 +1,16 @@
 import { prisma } from '@/libs/prisma'
+import { ResourceNotFoundError } from '@/domain/shared/errors/domain-errors'
 import { UserRole as PrismaUserRole } from '@prisma/client'
 import type { UserRole } from '@/domain/auth/enterprise/entities/user'
 import { PersonalTrainer } from '@/domain/catalog/enterprise/entities/personal-trainer'
 import { makePersonalTrainerProps } from '@/utils/tests/factories/make-personal-trainer'
 import { mapTrainerToPrisma, mapRoleToPrismaEnum } from '../mappers/prisma-mapper'
+import {
+  hydratePromotionFromTemplate,
+  isPromotionRef,
+  isLegacyPromotion,
+} from '@/domain/catalog/enterprise/services/promotion-hydration'
+import { PrismaPromotionTemplatesRepository } from './prisma-promotion-templates-repository'
 import type { AdminUsersRepository } from '@/domain/admin/application/repositories/admin-users-repository'
 import type {
   AdminUserListItem,
@@ -19,10 +26,37 @@ function mapPrismaRole(role: PrismaUserRole): UserRole {
   return 'student'
 }
 
-function extractPromoPrice(promotion: unknown): number | undefined {
+function extractPromoPrice(
+  promotion: unknown,
+  servicePrice?: number,
+  templatesById?: Map<string, Awaited<ReturnType<PrismaPromotionTemplatesRepository['findById']>>>,
+): number | undefined {
   if (!promotion || typeof promotion !== 'object') return undefined
-  const promoPrice = (promotion as TrainerPromotion).promoPrice
-  return typeof promoPrice === 'number' ? promoPrice : undefined
+
+  if (isLegacyPromotion(promotion)) {
+    return promotion.promoPrice
+  }
+
+  if (isPromotionRef(promotion) && servicePrice && templatesById) {
+    const template = templatesById.get(promotion.templateId)
+    if (!template) return undefined
+    return hydratePromotionFromTemplate(promotion, template, servicePrice)?.promoPrice
+  }
+
+  return undefined
+}
+
+function collectTemplateIds(users: Array<{ trainer?: { promotion: unknown } | null }>): string[] {
+  const ids = new Set<string>()
+
+  for (const user of users) {
+    const promotion = user.trainer?.promotion
+    if (isPromotionRef(promotion)) {
+      ids.add(promotion.templateId)
+    }
+  }
+
+  return [...ids]
 }
 
 function mapToListItem(
@@ -49,6 +83,7 @@ function mapToListItem(
       promotion: unknown
     } | null
   },
+  templatesById?: Map<string, NonNullable<Awaited<ReturnType<PrismaPromotionTemplatesRepository['findById']>>>>,
 ): AdminUserListItem {
   return {
     id: user.id,
@@ -61,7 +96,11 @@ function mapToListItem(
     state: user.state ?? user.trainer?.state ?? undefined,
     availability: user.trainer?.availability ?? undefined,
     servicePrice: user.trainer?.service_price,
-    promoPrice: extractPromoPrice(user.trainer?.promotion),
+    promoPrice: extractPromoPrice(
+      user.trainer?.promotion,
+      user.trainer?.service_price,
+      templatesById,
+    ),
     isActive: user.is_active,
     featured: user.trainer?.featured ?? false,
     trainerId: user.trainer?.id,
@@ -70,6 +109,8 @@ function mapToListItem(
 }
 
 export class PrismaAdminUsersRepository implements AdminUsersRepository {
+  private readonly promotionTemplatesRepository = new PrismaPromotionTemplatesRepository()
+
   async findMany(query: AdminUserListQuery): Promise<AdminUserListResult> {
     const where: Record<string, unknown> = {}
 
@@ -111,8 +152,12 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
       take: query.pageSize,
     })
 
+    const templateIds = collectTemplateIds(users)
+    const templates = await this.promotionTemplatesRepository.findByIds(templateIds)
+    const templatesById = new Map(templates.map((template) => [template.id, template]))
+
     return {
-      items: users.map(mapToListItem),
+      items: users.map((user) => mapToListItem(user, templatesById)),
       total,
       page: query.page,
       pageSize: query.pageSize,
@@ -139,7 +184,14 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
         },
       },
     })
-    return user ? mapToListItem(user) : null
+
+    if (!user) return null
+
+    const templateIds = collectTemplateIds([user])
+    const templates = await this.promotionTemplatesRepository.findByIds(templateIds)
+    const templatesById = new Map(templates.map((template) => [template.id, template]))
+
+    return mapToListItem(user, templatesById)
   }
 
   async create(payload: CreateAdminUserPayload, passwordHash: string): Promise<AdminUserListItem> {
@@ -208,14 +260,14 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
     }
 
     const refreshed = await this.findById(id)
-    if (!refreshed) throw new Error('User not found after update')
+    if (!refreshed) throw new ResourceNotFoundError()
     return refreshed
   }
 
   async toggleFeatured(userId: string, featured: boolean): Promise<AdminUserListItem> {
     const trainer = await prisma.personalTrainer.findFirst({ where: { user_id: userId } })
     if (!trainer) {
-      throw new Error('Trainer profile not found')
+      throw new ResourceNotFoundError()
     }
 
     await prisma.personalTrainer.update({
@@ -224,7 +276,7 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
     })
 
     const refreshed = await this.findById(userId)
-    if (!refreshed) throw new Error('User not found after featured toggle')
+    if (!refreshed) throw new ResourceNotFoundError()
     return refreshed
   }
 
@@ -235,5 +287,22 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
     if (!user) return false
     if (excludeId && user.id === excludeId) return false
     return true
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const trainer = await tx.personalTrainer.findFirst({ where: { user_id: id } })
+      if (trainer) {
+        await tx.favorite.deleteMany({ where: { trainer_id: trainer.id } })
+        await tx.trainerReview.deleteMany({ where: { trainer_id: trainer.id } })
+        await tx.personalTrainer.delete({ where: { id: trainer.id } })
+      }
+      await tx.favorite.deleteMany({ where: { user_id: id } })
+      await tx.trainerReview.deleteMany({ where: { user_id: id } })
+      await tx.adminImpersonationLog.deleteMany({
+        where: { OR: [{ admin_user_id: id }, { target_user_id: id }] },
+      })
+      await tx.user.delete({ where: { id } })
+    })
   }
 }

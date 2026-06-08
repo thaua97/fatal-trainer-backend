@@ -4,9 +4,10 @@ import {
   PersonalTrainer,
   type PersonalTrainerProps,
   type TrainerModality,
-  type TrainerPromotion,
   type TrainerReview,
 } from '@/domain/catalog/enterprise/entities/personal-trainer'
+import type { PromotionTemplateRecord } from '@/domain/admin/enterprise/entities/admin-promotion-template'
+import { resolvePromotion } from '@/domain/catalog/enterprise/services/promotion-hydration'
 import type { StoredUser, UserRole } from '@/domain/auth/enterprise/entities/user'
 import { UserRole as PrismaUserRole } from '@prisma/client'
 
@@ -44,8 +45,17 @@ export function mapRoleToPrismaEnum(role: UserRole): PrismaUserRole {
 
 export function mapTrainerToDomain(
   record: PrismaTrainer,
-  options?: { isActive?: boolean },
+  options?: {
+    isActive?: boolean
+    templatesById?: Map<string, PromotionTemplateRecord>
+  },
 ): PersonalTrainer {
+  const promotion = resolvePromotion(
+    record.promotion,
+    record.service_price,
+    options?.templatesById ?? new Map(),
+  )
+
   const props: PersonalTrainerProps = {
     userId: record.user_id ?? undefined,
     name: record.name,
@@ -67,7 +77,7 @@ export function mapTrainerToDomain(
     experienceYears: record.experience_years ?? undefined,
     reviews: (record.reviews as TrainerReview[] | null) ?? undefined,
     featured: record.featured,
-    promotion: (record.promotion as TrainerPromotion | null) ?? undefined,
+    promotion,
     isActive: options?.isActive ?? true,
   }
 
@@ -99,8 +109,21 @@ export function mapTrainerToPrisma(trainer: PersonalTrainer) {
       ? (trainer.props.reviews as unknown as Prisma.InputJsonValue)
       : Prisma.JsonNull,
     featured: trainer.props.featured ?? false,
-    promotion: trainer.props.promotion
-      ? (trainer.props.promotion as unknown as Prisma.InputJsonValue)
-      : Prisma.JsonNull,
+    promotion: serializePromotionForStorage(trainer.props.promotion),
   }
+}
+
+function serializePromotionForStorage(
+  promotion: PersonalTrainerProps['promotion'],
+): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  if (!promotion) return Prisma.JsonNull
+
+  if (promotion.templateId) {
+    return {
+      templateId: promotion.templateId,
+      redemptionCount: promotion.redemptionCount ?? 0,
+    }
+  }
+
+  return promotion as unknown as Prisma.InputJsonValue
 }

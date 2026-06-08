@@ -3,8 +3,8 @@ import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import fastifyMultipart from '@fastify/multipart'
 import { join } from 'node:path'
-import { ZodError } from 'zod'
 import { env } from '@/env'
+import { ERROR_CODES } from '@/infra/http/errors/error-codes'
 import { personalTrainersRoutes } from '@/infra/http/controllers/personal-trainers/list-trainers.controller'
 import { myTrainerRoutes } from '@/infra/http/controllers/personal-trainers/my-trainer.controller'
 import { bookmakersRoutes } from '@/infra/http/controllers/personal-trainers/bookmakers.controller'
@@ -12,6 +12,7 @@ import { trainerReviewsRoutes } from '@/infra/http/controllers/personal-trainers
 import { authRoutes } from '@/infra/http/controllers/auth/auth.controller'
 import { reportsRoutes } from '@/infra/http/controllers/reports/reports.controller'
 import { adminRoutes } from '@/infra/http/controllers/admin/admin.controller'
+import { promotionTemplatesRoutes } from '@/infra/http/controllers/promotion-templates/promotion-templates.controller'
 import { mapErrorToResponse } from '@/infra/http/errors/map-error-to-response'
 
 export const app = fastify()
@@ -36,6 +37,7 @@ app.register(async (api) => {
   await api.register(authRoutes)
   await api.register(reportsRoutes)
   await api.register(adminRoutes)
+  await api.register(promotionTemplatesRoutes)
 }, { prefix: '/api' })
 
 app.get('/uploads/*', async (request, reply) => {
@@ -44,21 +46,19 @@ app.get('/uploads/*', async (request, reply) => {
   const filePath = join(process.cwd(), env.UPLOAD_DIR, relativePath)
 
   if (!existsSync(filePath)) {
-    return reply.status(404).send({ message: 'File not found' })
+    return reply.status(404).send({ message: ERROR_CODES.notFound })
   }
 
   return reply.send(createReadStream(filePath))
 })
 
-app.setErrorHandler((error, _request, reply) => {
-  if (error instanceof ZodError) {
-    return reply.status(400).send({
-      message: 'Validation error',
-      issues: error.format(),
-    })
+app.setErrorHandler((error, request, reply) => {
+  const mapped = mapErrorToResponse(error)
+
+  if (mapped.statusCode >= 500) {
+    request.log.error({ err: error }, 'Unhandled server error')
   }
 
-  const mapped = mapErrorToResponse(error)
   return reply.status(mapped.statusCode).send(mapped.body)
 })
 

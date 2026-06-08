@@ -30,6 +30,23 @@ describe('ImpersonateUserUseCase', () => {
     expect(logsRepo.items[0]?.targetRole).toBe('personal-trainer')
   })
 
+  it('rejects self-impersonation', async () => {
+    const usersRepo = new InMemoryAdminUsersRepository([{
+      id: 'admin-1',
+      name: 'Admin',
+      email: 'admin@test.com',
+      role: 'admin',
+      isActive: true,
+      featured: false,
+      createdAt: '2026-06-06T00:00:00.000Z',
+    }])
+    const logsRepo = new InMemoryAdminImpersonationLogsRepository()
+    const useCase = new ImpersonateUserUseCase(usersRepo, logsRepo)
+
+    await expect(useCase.execute('admin-1', 'admin-1')).rejects.toBeInstanceOf(ForbiddenError)
+    expect(logsRepo.items).toHaveLength(0)
+  })
+
   it('rejects inactive users', async () => {
     const usersRepo = new InMemoryAdminUsersRepository([{
       id: 'target-1',

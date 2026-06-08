@@ -172,3 +172,18 @@ model AdminUserNote {
   @@index([user_id, created_at(sort: Desc)])
   @@map("admin_user_notes")
 }
+
+model PromotionTemplate {
+  id               String   @id @default(uuid())
+  name             String
+  label            String
+  discount_percent Int
+  starts_at        DateTime @db.Date
+  ends_at          DateTime @db.Date
+  max_redemptions  Int?
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@map("promotion_templates")
+}

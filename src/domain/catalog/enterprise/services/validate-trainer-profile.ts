@@ -6,7 +6,7 @@ import type {
   TrainerInfoPayload,
   TrainerInfoValidationErrors,
   TrainerProfileValidationResult,
-  TrainerPromotionPayload,
+  TrainerPromotionActivationPayload,
   TrainerPromotionValidationErrors,
 } from '../entities/trainer-profile-payloads'
 
@@ -85,44 +85,21 @@ export function validateTrainerInfo(
   return { valid: Object.keys(errors).length === 0, errors }
 }
 
-export function validateTrainerPromotion(
-  payload: TrainerPromotionPayload,
+export function validateTrainerPromotionActivation(
+  payload: TrainerPromotionActivationPayload,
   servicePrice: number,
 ): TrainerProfileValidationResult<TrainerPromotionValidationErrors> {
   const errors: TrainerPromotionValidationErrors = {}
 
-  if (!payload.active) return { valid: true, errors }
+  if (payload.templateId === null) return { valid: true, errors }
 
-  if (
-    !Number.isFinite(payload.discountPercent) ||
-    payload.discountPercent < 5 ||
-    payload.discountPercent > 80
-  ) {
-    errors.discountPercent = 'invalid'
+  if (!payload.templateId?.trim()) {
+    errors.templateId = 'required'
   }
 
-  if (!payload.label.trim()) errors.label = 'required'
-
-  if (!payload.startsAt) errors.startsAt = 'required'
-  else if (!isValidDateString(payload.startsAt)) errors.startsAt = 'invalid'
-
-  if (!payload.endsAt) errors.endsAt = 'required'
-  else if (!isValidDateString(payload.endsAt)) errors.endsAt = 'invalid'
-  else if (
-    payload.startsAt &&
-    isValidDateString(payload.startsAt) &&
-    payload.endsAt < payload.startsAt
-  ) {
-    errors.endsAt = 'beforeStart'
+  if (servicePrice <= 0) {
+    errors.templateId = 'noServicePrice'
   }
-
-  if (payload.maxRedemptions != null) {
-    if (!Number.isInteger(payload.maxRedemptions) || payload.maxRedemptions < 1) {
-      errors.maxRedemptions = 'invalid'
-    }
-  }
-
-  if (servicePrice <= 0) errors.active = 'noServicePrice'
 
   return { valid: Object.keys(errors).length === 0, errors }
 }

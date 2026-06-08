@@ -1,4 +1,5 @@
 import { prisma } from '@/libs/prisma'
+import { ResourceNotFoundError } from '@/domain/shared/errors/domain-errors'
 import type { ReportStatus as PrismaReportStatus } from '@prisma/client'
 import type { AdminReportsRepository } from '@/domain/admin/application/repositories/admin-reports-repository'
 import type {
@@ -97,13 +98,13 @@ export class PrismaAdminReportsRepository implements AdminReportsRepository {
     })
 
     const refreshed = await this.findById(id)
-    if (!refreshed) throw new Error('Report not found after update')
+    if (!refreshed) throw new ResourceNotFoundError()
     return refreshed
   }
 
   async deactivateTrainerFromReport(reportId: string, adminId: string): Promise<AdminReportListItem> {
     const report = await prisma.report.findUnique({ where: { id: reportId } })
-    if (!report) throw new Error('Report not found')
+    if (!report) throw new ResourceNotFoundError()
 
     const trainer = await prisma.personalTrainer.findUnique({
       where: { id: report.trainer_id },
@@ -127,7 +128,7 @@ export class PrismaAdminReportsRepository implements AdminReportsRepository {
     })
 
     const refreshed = await this.findById(reportId)
-    if (!refreshed) throw new Error('Report not found after deactivate')
+    if (!refreshed) throw new ResourceNotFoundError()
     return refreshed
   }
 }

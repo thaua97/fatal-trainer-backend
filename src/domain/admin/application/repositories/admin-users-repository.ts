@@ -14,6 +14,7 @@ export interface AdminUsersRepository {
   update(id: string, payload: UpdateAdminUserPayload): Promise<AdminUserListItem>
   toggleFeatured(userId: string, featured: boolean): Promise<AdminUserListItem>
   emailExists(email: string, excludeId?: string): Promise<boolean>
+  delete(id: string): Promise<void>
 }
 
 export interface AdminTrainerCreator {

@@ -8,7 +8,6 @@ import {
   makeGetEnrichedAuthUserUseCase,
   makeRegisterUserUseCase,
 } from '../../factories/make-use-cases'
-import { mapErrorToResponse } from '../../errors/map-error-to-response'
 import {
   clearSessionCookie,
   requireSession,
@@ -32,71 +31,51 @@ const loginSchema = z.object({
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/auth/register', async (request, reply) => {
-    try {
-      const body = registerSchema.parse(request.body)
-      const useCase = makeRegisterUserUseCase()
-      const user = await useCase.execute(body)
+    const body = registerSchema.parse(request.body)
+    const useCase = makeRegisterUserUseCase()
+    const user = await useCase.execute(body)
 
-      const token = randomUUID()
-      const createSession = makeCreateSessionUseCase()
-      await createSession.execute(user.id, token)
-      setSessionCookie(reply, token)
+    const token = randomUUID()
+    const createSession = makeCreateSessionUseCase()
+    await createSession.execute(user.id, token)
+    setSessionCookie(reply, token)
 
-      const enrich = makeGetEnrichedAuthUserUseCase()
-      const enrichedUser = await enrich.execute(user.id)
+    const enrich = makeGetEnrichedAuthUserUseCase()
+    const enrichedUser = await enrich.execute(user.id)
 
-      return reply.status(201).send({ user: enrichedUser })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
+    return reply.status(201).send({ user: enrichedUser })
   })
 
   app.post('/auth/login', async (request, reply) => {
-    try {
-      const body = loginSchema.parse(request.body)
-      const useCase = makeAuthenticateUserUseCase()
-      const user = await useCase.execute(body.email, body.password)
+    const body = loginSchema.parse(request.body)
+    const useCase = makeAuthenticateUserUseCase()
+    const user = await useCase.execute(body.email, body.password)
 
-      const token = randomUUID()
-      const createSession = makeCreateSessionUseCase()
-      await createSession.execute(user.id, token)
-      setSessionCookie(reply, token)
+    const token = randomUUID()
+    const createSession = makeCreateSessionUseCase()
+    await createSession.execute(user.id, token)
+    setSessionCookie(reply, token)
 
-      const enrich = makeGetEnrichedAuthUserUseCase()
-      const enrichedUser = await enrich.execute(user.id)
+    const enrich = makeGetEnrichedAuthUserUseCase()
+    const enrichedUser = await enrich.execute(user.id)
 
-      return reply.send({ user: enrichedUser })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
+    return reply.send({ user: enrichedUser })
   })
 
   app.get('/auth/me', async (request, reply) => {
-    try {
-      const sessionUser = await requireSession(request)
-      const enrich = makeGetEnrichedAuthUserUseCase()
-      const user = await enrich.execute(sessionUser.id, {
-        impersonatorUserId: sessionUser.impersonatorId,
-      })
-      return reply.send({ user })
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
+    const sessionUser = await requireSession(request)
+    const enrich = makeGetEnrichedAuthUserUseCase()
+    const user = await enrich.execute(sessionUser.id, {
+      impersonatorUserId: sessionUser.impersonatorId,
+    })
+    return reply.send({ user })
   })
 
   app.post('/auth/logout', async (request, reply) => {
-    try {
-      const token = request.cookies[SESSION_COOKIE]
-      const destroySession = makeDestroySessionUseCase()
-      await destroySession.execute(token ?? '')
-      clearSessionCookie(reply)
-      return reply.status(204).send()
-    } catch (error) {
-      const mapped = mapErrorToResponse(error)
-      return reply.status(mapped.statusCode).send(mapped.body)
-    }
+    const token = request.cookies[SESSION_COOKIE]
+    const destroySession = makeDestroySessionUseCase()
+    await destroySession.execute(token ?? '')
+    clearSessionCookie(reply)
+    return reply.status(204).send()
   })
 }
