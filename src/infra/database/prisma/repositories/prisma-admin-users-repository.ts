@@ -19,6 +19,7 @@ import type {
   CreateAdminUserPayload,
   UpdateAdminUserPayload,
 } from '@/domain/admin/enterprise/entities/admin-user'
+import { adminUserRoleSortPriority } from '@/domain/admin/enterprise/services/sort-admin-users'
 
 function mapPrismaRole(role: PrismaUserRole): UserRole {
   if (role === PrismaUserRole.personal_trainer) return 'personal-trainer'
@@ -130,8 +131,42 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
     }
 
     const total = await prisma.user.count({ where })
-    const users = await prisma.user.findMany({
+
+    const orderedCandidates = await prisma.user.findMany({
       where,
+      select: {
+        id: true,
+        role: true,
+        created_at: true,
+      },
+    })
+
+    orderedCandidates.sort((a, b) => {
+      const roleDiff = adminUserRoleSortPriority(a.role) - adminUserRoleSortPriority(b.role)
+      if (roleDiff !== 0) {
+        return roleDiff
+      }
+
+      return b.created_at.getTime() - a.created_at.getTime()
+    })
+
+    const skip = (query.page - 1) * query.pageSize
+    const pageIds = orderedCandidates
+      .slice(skip, skip + query.pageSize)
+      .map((user) => user.id)
+
+    if (pageIds.length === 0) {
+      return {
+        items: [],
+        total,
+        page: query.page,
+        pageSize: query.pageSize,
+        hasMore: skip < total,
+      }
+    }
+
+    const users = await prisma.user.findMany({
+      where: { id: { in: pageIds } },
       include: {
         trainer: {
           select: {
@@ -147,17 +182,19 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
           },
         },
       },
-      orderBy: { created_at: 'desc' },
-      skip: (query.page - 1) * query.pageSize,
-      take: query.pageSize,
     })
 
-    const templateIds = collectTemplateIds(users)
+    const usersById = new Map(users.map((user) => [user.id, user]))
+    const orderedUsers = pageIds
+      .map((id) => usersById.get(id))
+      .filter((user): user is NonNullable<typeof user> => Boolean(user))
+
+    const templateIds = collectTemplateIds(orderedUsers)
     const templates = await this.promotionTemplatesRepository.findByIds(templateIds)
     const templatesById = new Map(templates.map((template) => [template.id, template]))
 
     return {
-      items: users.map((user) => mapToListItem(user, templatesById)),
+      items: orderedUsers.map((user) => mapToListItem(user, templatesById)),
       total,
       page: query.page,
       pageSize: query.pageSize,

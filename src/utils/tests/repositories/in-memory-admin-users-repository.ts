@@ -6,6 +6,7 @@ import type {
   CreateAdminUserPayload,
   UpdateAdminUserPayload,
 } from '@/domain/admin/enterprise/entities/admin-user'
+import { compareAdminUsersByDefaultOrder } from '@/domain/admin/enterprise/services/sort-admin-users'
 
 export class InMemoryAdminUsersRepository implements AdminUsersRepository {
   constructor(public items: AdminUserListItem[] = []) {}
@@ -24,12 +25,18 @@ export class InMemoryAdminUsersRepository implements AdminUsersRepository {
     if (query.isActive !== undefined) {
       filtered = filtered.filter(user => user.isActive === query.isActive)
     }
+
+    filtered.sort(compareAdminUsersByDefaultOrder)
+
+    const skip = (query.page - 1) * query.pageSize
+    const items = filtered.slice(skip, skip + query.pageSize)
+
     return {
-      items: filtered,
+      items,
       total: filtered.length,
       page: query.page,
       pageSize: query.pageSize,
-      hasMore: false,
+      hasMore: skip + items.length < filtered.length,
     }
   }
 
