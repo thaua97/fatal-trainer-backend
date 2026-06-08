@@ -265,6 +265,27 @@ Senha padrão (aluno/personal): `123456` — admin: `Admin@Fatal2026!`
 | personal@fataltrainer.com | personal-trainer | sim |
 | bruno@fataltrainer.com | personal-trainer | sim |
 
+### Re-seed em produção (Render)
+
+O `initialDeployHook` do Render executa a seed **apenas no primeiro deploy**. Após alterar os dados da seed, é necessário rodá-la manualmente:
+
+1. Faça push do código com as mudanças de seed
+2. Aguarde o deploy automático (migrations via `preDeployCommand`)
+3. No Render Dashboard → serviço `fatal-trainer-api` → **Shell**
+4. Execute:
+
+```bash
+pnpm run db:seed
+```
+
+5. Valide no log: `Seeded 500 personal trainers` ou via API:
+
+```bash
+curl "https://fatal-trainer-api.onrender.com/api/personal-trainers?page=1&pageSize=1"
+```
+
+**Atenção:** a seed apaga todos os dados existentes (users, trainers, favoritos, reviews, sessions) antes de reinserir. Adequado para ambiente demo/desafio.
+
 ---
 
 ## Uso de Inteligência Artificial

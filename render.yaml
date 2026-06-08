@@ -37,6 +37,7 @@ services:
         - fatal-trainer-backend/**
     buildCommand: pnpm install --frozen-lockfile && pnpm exec prisma generate && pnpm run build
     preDeployCommand: pnpm exec prisma migrate deploy
+    # Após alterar seed: Render Shell → pnpm run db:seed (initialDeployHook só roda no 1º deploy)
     initialDeployHook: pnpm run db:seed
     startCommand: pnpm run prod
     healthCheckPath: /api/personal-trainers?page=1&pageSize=1

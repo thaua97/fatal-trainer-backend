@@ -12,8 +12,10 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
+const SEED_TRAINER_COUNT = 500
+
 async function main() {
-  const trainers = generateMockTrainers(500)
+  const trainers = generateMockTrainers(SEED_TRAINER_COUNT)
 
   await prisma.trainerReview.deleteMany()
   await prisma.report.deleteMany()
@@ -36,7 +38,7 @@ async function main() {
   const studentUserIds = await seedReviewStudents(prisma)
   await seedTrainerReviewsFromJson(prisma, studentUserIds)
 
-  console.log(`Seeded ${trainers.length} personal trainers`)
+  console.log(`Seeded ${trainers.length} personal trainers (${SEED_TRAINER_COUNT} catalog + linked profiles)`)
 }
 
 main()
