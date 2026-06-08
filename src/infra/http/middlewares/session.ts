@@ -1,7 +1,24 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { env } from '@/env'
 import { UnauthorizedError, ForbiddenError } from '@/domain/shared/errors/domain-errors'
 import { makeResolveSessionUseCase } from '../factories/make-use-cases'
-import { ADMIN_BACKUP_SESSION_COOKIE, SESSION_COOKIE } from '../constants/session'
+import {
+  ADMIN_BACKUP_SESSION_COOKIE,
+  SESSION_COOKIE,
+  SESSION_MAX_AGE,
+} from '../constants/session'
+
+const isCrossOriginDeployment = env.NODE_ENV === 'prod'
+
+function sessionCookieAttributes() {
+  return {
+    httpOnly: true,
+    sameSite: isCrossOriginDeployment ? 'none' as const : 'lax' as const,
+    secure: isCrossOriginDeployment,
+    maxAge: SESSION_MAX_AGE,
+    path: '/',
+  }
+}
 
 export async function resolveSession(request: FastifyRequest) {
   const token = request.cookies[SESSION_COOKIE]
@@ -34,29 +51,17 @@ export async function requireAdminSession(request: FastifyRequest) {
 }
 
 export function setSessionCookie(reply: FastifyReply, token: string) {
-  reply.setCookie(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7,
-    path: '/',
-  })
+  reply.setCookie(SESSION_COOKIE, token, sessionCookieAttributes())
 }
 
 export function setAdminBackupCookie(reply: FastifyReply, token: string) {
-  reply.setCookie(ADMIN_BACKUP_SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7,
-    path: '/',
-  })
+  reply.setCookie(ADMIN_BACKUP_SESSION_COOKIE, token, sessionCookieAttributes())
 }
 
 export function clearSessionCookie(reply: FastifyReply) {
-  reply.clearCookie(SESSION_COOKIE, { path: '/' })
+  reply.clearCookie(SESSION_COOKIE, sessionCookieAttributes())
 }
 
 export function clearAdminBackupCookie(reply: FastifyReply) {
-  reply.clearCookie(ADMIN_BACKUP_SESSION_COOKIE, { path: '/' })
+  reply.clearCookie(ADMIN_BACKUP_SESSION_COOKIE, sessionCookieAttributes())
 }

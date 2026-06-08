@@ -16,7 +16,7 @@
 #
 # Notes:
 #   - NODE_ENV deve ser "prod" (não "production") — src/env/index.ts
-#   - Auth cookies cross-origin podem falhar até ajuste em session.ts
+#   - Cookies de sessão usam SameSite=None + Secure em prod (front Vercel ↔ API Render)
 #   - STORAGE_DRIVER=local: uploads somem no redeploy (fotos do seed via Pexels OK)
 #################################################################
 
