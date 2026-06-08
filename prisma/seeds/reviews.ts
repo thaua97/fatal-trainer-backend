@@ -1,6 +1,7 @@
 import { hash } from 'bcryptjs'
 import type { PrismaClient } from '@prisma/client'
 import type { TrainerReview } from '@/domain/catalog/enterprise/entities/personal-trainer'
+import { pickBrazilianName } from './seed-data'
 import { SEED_PASSWORD } from './users'
 
 const SEED_STUDENT_COUNT = 120
@@ -12,7 +13,7 @@ export async function seedReviewStudents(prisma: PrismaClient): Promise<string[]
   for (let index = 0; index < SEED_STUDENT_COUNT; index += 1) {
     const created = await prisma.user.create({
       data: {
-        name: `Aluno Seed ${index + 1}`,
+        name: pickBrazilianName(index + 500),
         email: `aluno-seed-${String(index + 1).padStart(3, '0')}@fataltrainer.com`,
         password_hash: passwordHash,
         role: 'student',

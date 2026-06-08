@@ -7,25 +7,11 @@ import {
   CATALOG_SPECIALTIES,
   PROMOTION_LABELS,
 } from '@/domain/catalog/enterprise/constants/catalog-options'
-
-const NAMES = [
-  'Ana Silva', 'Bruno Costa', 'Carla Mendes', 'Diego Ferreira', 'Elena Rocha',
-  'Felipe Alves', 'Gabriela Nunes', 'Henrique Lima', 'Isabela Martins', 'João Pedro Souza',
-  'Karina Duarte', 'Lucas Barbosa', 'Mariana Teixeira', 'Nicolas Prado', 'Olivia Campos',
-  'Paulo Henrique', 'Rafaela Moura', 'Samuel Ribeiro', 'Tatiana Freitas', 'Vinícius Araújo',
-  'Amanda Lopes', 'Caio Mendonça', 'Daniela Pires', 'Eduardo Santana',
-] as const
-
-const CITIES = [
-  { city: 'São Paulo', state: 'SP' },
-  { city: 'Rio de Janeiro', state: 'RJ' },
-  { city: 'Belo Horizonte', state: 'MG' },
-  { city: 'Curitiba', state: 'PR' },
-  { city: 'Porto Alegre', state: 'RS' },
-  { city: 'Brasília', state: 'DF' },
-  { city: 'Salvador', state: 'BA' },
-  { city: 'Recife', state: 'PE' },
-] as const
+import {
+  pickBrazilianName,
+  pickCity,
+  pickContactPhone,
+} from '../../../../prisma/seeds/seed-data'
 
 const MODALITY_COMBOS: TrainerModality[][] = [
   ['presencial'],
@@ -64,12 +50,6 @@ function padId(index: number): string {
   return `trainer-${String(index + 1).padStart(3, '0')}`
 }
 
-function pickName(index: number): string {
-  const base = NAMES[index % NAMES.length]!
-  if (index < NAMES.length) return base
-  return `${base} ${Math.floor(index / NAMES.length) + 1}`
-}
-
 function pickSpecialty(index: number): string {
   return CATALOG_SPECIALTIES[index % CATALOG_SPECIALTIES.length]!
 }
@@ -106,24 +86,18 @@ function buildPromotion(index: number, servicePrice: number): PersonalTrainerPro
   }
 }
 
-function mockPhone(index: number): string {
-  const ddd = ['11', '21', '51', '31', '41'][index % 5]!
-  const number = String(900000000 + index * 1234567).slice(-9)
-  return `${ddd}9${number}`
-}
-
 export function makePersonalTrainerProps(index: number): PersonalTrainerProps {
   const specialty = pickSpecialty(index)
-  const location = CITIES[index % CITIES.length]!
+  const location = pickCity(index)
   const servicePrice = 80 + (index * 7) % 171
 
   return {
-    name: pickName(index),
+    name: pickBrazilianName(index),
     profession: `Personal Trainer — ${specialty}`,
     description: DESCRIPTIONS[index % DESCRIPTIONS.length]!,
     photoUrl: getMockAvatarUrl(index),
     servicePrice,
-    contactPhone: mockPhone(index),
+    contactPhone: pickContactPhone(index, location),
     rating: 3.5 + (index % 16) / 10,
     reviewCount: 5 + (index * 13) % 116,
     distanceKm: 1 + (index * 3) % 25,
@@ -136,7 +110,7 @@ export function makePersonalTrainerProps(index: number): PersonalTrainerProps {
     availability: AVAILABILITIES[index % AVAILABILITIES.length],
     experienceYears: 2 + (index % 15),
     reviews: Array.from({ length: (index % 3) + 1 }, (_, reviewIndex) => ({
-      author: pickName(index + reviewIndex + 5),
+      author: pickBrazilianName(index + reviewIndex + 1000),
       rating: 4 + ((index + reviewIndex) % 2),
       comment: REVIEW_COMMENTS[(index + reviewIndex) % REVIEW_COMMENTS.length]!,
     })),
