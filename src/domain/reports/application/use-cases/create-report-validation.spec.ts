@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { ValidationError } from '@/domain/shared/errors/domain-errors'
-import { generateMockTrainers } from '@/utils/tests/factories/make-personal-trainer'
 import { InMemoryPersonalTrainersRepository } from '@/utils/tests/repositories/in-memory-personal-trainers-repository'
 import { InMemoryReportsRepository } from '@/utils/tests/repositories/in-memory-reports-repository'
 import { CreateReportUseCase } from './create-report'

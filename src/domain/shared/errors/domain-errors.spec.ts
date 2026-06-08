@@ -11,7 +11,7 @@ import {
   UserAlreadyExistsError,
   ValidationError,
 } from '@/domain/shared/errors/domain-errors'
-import { ZodError, z } from 'zod'
+import { z } from 'zod'
 
 describe('mapErrorToResponse', () => {
   it('maps known errors to stable message codes', () => {

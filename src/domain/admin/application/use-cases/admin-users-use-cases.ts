@@ -16,7 +16,6 @@ import type {
   CreateAdminUserPayload,
   UpdateAdminUserPayload,
 } from '../../enterprise/entities/admin-user'
-import type { TrainerPromotion } from '@/domain/catalog/enterprise/entities/personal-trainer'
 import type { AdminUsersRepository } from '../repositories/admin-users-repository'
 import type { AdminImpersonationLogsRepository } from '../repositories/admin-impersonation-logs-repository'
 import type { AdminUserProfileRepository } from '../repositories/admin-user-profile-repository'

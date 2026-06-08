@@ -1,4 +1,3 @@
-import type { UserRole } from '@/domain/auth/enterprise/entities/user'
 import type {
   AdminUserListItem,
   AdminUserListQuery,

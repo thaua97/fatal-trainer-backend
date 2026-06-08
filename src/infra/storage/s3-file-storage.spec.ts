@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import type { S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { ValidationError } from '@/domain/shared/errors/domain-errors'
 import { S3FileStorage } from './s3-file-storage'
 

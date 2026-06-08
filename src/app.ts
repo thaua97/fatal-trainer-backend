@@ -11,7 +11,7 @@ import { bookmakersRoutes } from '@/infra/http/controllers/personal-trainers/boo
 import { trainerReviewsRoutes } from '@/infra/http/controllers/personal-trainers/trainer-reviews.controller'
 import { authRoutes } from '@/infra/http/controllers/auth/auth.controller'
 import { reportsRoutes } from '@/infra/http/controllers/reports/reports.controller'
-import { adminRoutes } from '@/infra/http/controllers/admin/admin.controller'
+import { adminRoutes } from '@/infra/http/controllers/admin'
 import { promotionTemplatesRoutes } from '@/infra/http/controllers/promotion-templates/promotion-templates.controller'
 import { mapErrorToResponse } from '@/infra/http/errors/map-error-to-response'
 

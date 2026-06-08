@@ -1,4 +1,3 @@
-import type { ListQuery } from '@/domain/catalog/enterprise/value-objects/list-query'
 import { DEFAULT_LIST_QUERY } from '@/domain/catalog/enterprise/value-objects/list-query'
 import type { PaginatedTrainersResult } from '@/domain/catalog/application/repositories/personal-trainers-repository'
 import type { PersonalTrainersRepository } from '@/domain/catalog/application/repositories/personal-trainers-repository'

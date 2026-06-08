@@ -1,5 +1,5 @@
 import { prisma } from '@/libs/prisma'
-import type { StoredUser, UserRole } from '@/domain/auth/enterprise/entities/user'
+import type { StoredUser } from '@/domain/auth/enterprise/entities/user'
 import type {
   SessionsRepository,
   UsersRepository,

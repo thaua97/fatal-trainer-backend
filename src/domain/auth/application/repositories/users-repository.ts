@@ -1,4 +1,4 @@
-import type { AuthUser, RegisterPayload, StoredUser } from '../../enterprise/entities/user'
+import type { AuthUser, StoredUser } from '../../enterprise/entities/user'
 
 export interface UsersRepository {
   findByEmail(email: string): Promise<StoredUser | null>

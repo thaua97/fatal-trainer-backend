@@ -3,18 +3,15 @@ import { z } from 'zod'
 import {
   makeDeleteGalleryImageUseCase,
   makeGetOrCreateMyTrainerUseCase,
+  makeResolveMyTrainerUseCase,
   makeSetGalleryCoverUseCase,
   makeUpdateMyTrainerUseCase,
-  makeUploadGalleryImageUseCase,
-  trainersRepository,
+  makeUploadMyTrainerGalleryUseCase,
 } from '../../factories/make-use-cases'
 import { presentTrainer, presentTrainerDetail } from '../../presenters/trainer-presenter'
 import { requireTrainerSession } from '../../middlewares/session'
 import { makeFileStorage } from '../../factories/make-file-storage'
-import { ResourceNotFoundError, ValidationError } from '@/domain/shared/errors/domain-errors'
-import {
-  assertGalleryHasCapacity,
-} from '@/infra/storage/image-upload-validator'
+import { ValidationError } from '@/domain/shared/errors/domain-errors'
 
 const updateSchema = z.object({
   section: z.enum(['info', 'promotion']),
@@ -52,11 +49,7 @@ export async function myTrainerRoutes(app: FastifyInstance) {
   app.patch('/personal-trainers/me', async (request, reply) => {
     const user = await requireTrainerSession(request)
     const body = updateSchema.parse(request.body)
-    const trainer = await trainersRepository.findByUserId(user.id)
-
-    if (!trainer) {
-      throw new ResourceNotFoundError()
-    }
+    const trainer = await makeResolveMyTrainerUseCase().execute(user.id)
 
     const useCase = makeUpdateMyTrainerUseCase()
     const updated = await useCase.execute({
@@ -71,48 +64,28 @@ export async function myTrainerRoutes(app: FastifyInstance) {
 
   app.post('/personal-trainers/me/gallery', async (request, reply) => {
     const user = await requireTrainerSession(request)
-    const trainer = await trainersRepository.findByUserId(user.id)
-
-    if (!trainer) {
-      throw new ResourceNotFoundError()
-    }
-
     const file = await request.file()
     if (!file) {
       throw new ValidationError({ file: 'required' })
     }
 
-    assertGalleryHasCapacity(trainer.props.gallery?.length ?? 0)
+    const useCase = makeUploadMyTrainerGalleryUseCase()
+    const { url, trainer } = await useCase.execute(
+      user.id,
+      {
+        filename: file.filename,
+        mimetype: file.mimetype,
+        file: file.file,
+      },
+      file.file.truncated,
+    )
 
-    const storage = makeFileStorage()
-    const url = await storage.saveGalleryImage(trainer.id, {
-      filename: file.filename,
-      mimetype: file.mimetype,
-      file: file.file,
-    })
-
-    if (file.file.truncated) {
-      try {
-        await storage.deleteGalleryImage(url)
-      } catch {
-        // best-effort cleanup after oversize upload
-      }
-      throw new ValidationError({ file: 'tooLarge' })
-    }
-
-    const useCase = makeUploadGalleryImageUseCase()
-    const updated = await useCase.execute(trainer.id, url)
-
-    return reply.send({ url, gallery: updated.props.gallery ?? [] })
+    return reply.send({ url, gallery: trainer.props.gallery ?? [] })
   })
 
   app.delete('/personal-trainers/me/gallery/:index', async (request, reply) => {
     const user = await requireTrainerSession(request)
-    const trainer = await trainersRepository.findByUserId(user.id)
-
-    if (!trainer) {
-      throw new ResourceNotFoundError()
-    }
+    const trainer = await makeResolveMyTrainerUseCase().execute(user.id)
 
     const { index } = request.params as { index: string }
     const imageIndex = Number(index)
@@ -137,11 +110,7 @@ export async function myTrainerRoutes(app: FastifyInstance) {
 
   app.patch('/personal-trainers/me/gallery/cover', async (request, reply) => {
     const user = await requireTrainerSession(request)
-    const trainer = await trainersRepository.findByUserId(user.id)
-
-    if (!trainer) {
-      throw new ResourceNotFoundError()
-    }
+    const trainer = await makeResolveMyTrainerUseCase().execute(user.id)
 
     const body = z.object({ imageUrl: z.string() }).parse(request.body)
     const useCase = makeSetGalleryCoverUseCase()

@@ -8,7 +8,7 @@ import type {
 export class InMemoryReportsRepository implements ReportsRepository {
   public items: CreateReportResult[] = []
 
-  async create(payload: ReportPayload): Promise<CreateReportResult> {
+  async create(_payload: ReportPayload): Promise<CreateReportResult> {
     const result = {
       id: randomUUID(),
       createdAt: new Date().toISOString(),

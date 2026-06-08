@@ -3,7 +3,7 @@ import { ResourceNotFoundError } from '@/domain/shared/errors/domain-errors'
 import { UserRole as PrismaUserRole } from '@prisma/client'
 import type { UserRole } from '@/domain/auth/enterprise/entities/user'
 import { PersonalTrainer } from '@/domain/catalog/enterprise/entities/personal-trainer'
-import { makePersonalTrainerProps } from '@/utils/tests/factories/make-personal-trainer'
+import { buildDefaultTrainerProfile } from '@/domain/catalog/enterprise/defaults/trainer-profile-defaults'
 import { mapTrainerToPrisma, mapRoleToPrismaEnum } from '../mappers/prisma-mapper'
 import {
   hydratePromotionFromTemplate,
@@ -222,12 +222,11 @@ export class PrismaAdminUsersRepository implements AdminUsersRepository {
 
     if (payload.role === 'personal-trainer') {
       const trainer = PersonalTrainer.create(
-        {
-          ...makePersonalTrainerProps(0),
+        buildDefaultTrainerProfile({
           name: user.name,
           userId: user.id,
-          contactPhone: payload.phoneNumber?.trim() || makePersonalTrainerProps(0).contactPhone,
-        },
+          contactPhone: payload.phoneNumber,
+        }),
         user.id,
       )
       await prisma.personalTrainer.create({ data: mapTrainerToPrisma(trainer) })

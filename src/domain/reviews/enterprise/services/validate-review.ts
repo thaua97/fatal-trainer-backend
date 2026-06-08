@@ -15,7 +15,7 @@ export function isValidRatingStep(rating: number): boolean {
     return false
   }
 
-  return Number.isInteger(rating * 2)
+  return Number.isInteger(rating / RATING_STEP)
 }
 
 export function validateReview(payload: ReviewPayload): ReviewValidationResult {
