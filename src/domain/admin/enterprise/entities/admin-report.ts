@@ -1,6 +1,8 @@
 export type ReportStatus = 'pending' | 'in_review' | 'resolved' | 'archived'
 
-export type ReportType = 'inappropriate_content' | 'fake_profile' | 'harassment' | 'other'
+import type { ReportType } from '@/domain/reports/enterprise/constants/report-options'
+
+export type { ReportType }
 
 export interface AdminReportListItem {
   id: string

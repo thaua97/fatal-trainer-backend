@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { REPORT_TYPES } from '@/domain/reports/enterprise/constants/report-options'
 
 export const loginSchema = z.object({
   email: z.string(),
@@ -50,7 +51,7 @@ export const listReportsSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(20),
   status: z.enum(['pending', 'in_review', 'resolved', 'archived']).optional(),
-  type: z.enum(['inappropriate_content', 'fake_profile', 'harassment', 'other']).optional(),
+  type: z.enum(REPORT_TYPES).optional(),
 })
 
 export const updateReportSchema = z.object({

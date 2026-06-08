@@ -1,9 +1,10 @@
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
+import { REPORT_TYPES } from '@/domain/reports/enterprise/constants/report-options'
 import { makeCreateReportUseCase } from '../../factories/make-use-cases'
 
 const reportSchema = z.object({
-  type: z.string(),
+  type: z.enum(REPORT_TYPES),
   occurredAt: z.string(),
   trainerId: z.string(),
   description: z.string(),
@@ -15,7 +16,7 @@ export async function reportsRoutes(app: FastifyInstance) {
     const body = reportSchema.parse(request.body)
     const useCase = makeCreateReportUseCase()
     const result = await useCase.execute({
-      type: body.type as 'inappropriate_content' | 'fake_profile' | 'harassment' | 'other',
+      type: body.type,
       occurredAt: body.occurredAt,
       trainerId: body.trainerId,
       description: body.description,

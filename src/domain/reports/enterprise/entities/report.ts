@@ -1,4 +1,6 @@
-export type ReportType = 'inappropriate_content' | 'fake_profile' | 'harassment' | 'other'
+import type { ReportType } from '../constants/report-options'
+
+export type { ReportType }
 
 export interface ReportPayload {
   type: ReportType

@@ -1,7 +1,6 @@
 import { isValidEmail } from '@/domain/auth/enterprise/constants/auth-options'
+import { REPORT_TYPE_SET } from '../constants/report-options'
 import type { ReportPayload, ReportValidationErrors, ReportValidationResult } from '../entities/report'
-
-const REPORT_TYPES = new Set(['inappropriate_content', 'fake_profile', 'harassment', 'other'])
 
 export function validateReport(
   payload: ReportPayload,
@@ -9,7 +8,7 @@ export function validateReport(
 ): ReportValidationResult {
   const errors: ReportValidationErrors = {}
 
-  if (!payload.type || !REPORT_TYPES.has(payload.type)) {
+  if (!payload.type || !REPORT_TYPE_SET.has(payload.type)) {
     errors.type = 'invalid'
   }
 
