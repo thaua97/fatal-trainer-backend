@@ -2,6 +2,7 @@ import { PrismaPersonalTrainersRepository } from '@/infra/database/prisma/reposi
 import { PrismaUsersRepository, PrismaSessionsRepository } from '@/infra/database/prisma/repositories/prisma-users-repository'
 import { PrismaFavoritesRepository } from '@/infra/database/prisma/repositories/prisma-favorites-repository'
 import { PrismaReportsRepository } from '@/infra/database/prisma/repositories/prisma-reports-repository'
+import { PrismaReviewsRepository } from '@/infra/database/prisma/repositories/prisma-reviews-repository'
 import { ListPersonalTrainersUseCase } from '@/domain/catalog/application/use-cases/list-personal-trainers'
 import { GetPersonalTrainerByIdUseCase } from '@/domain/catalog/application/use-cases/get-personal-trainer-by-id'
 import { ListFeaturedTrainersUseCase } from '@/domain/catalog/application/use-cases/list-featured-trainers'
@@ -28,6 +29,9 @@ import {
   SyncFavoritesUseCase,
 } from '@/domain/favorites/application/use-cases/favorites-use-cases'
 import { CreateReportUseCase } from '@/domain/reports/application/use-cases/create-report'
+import { ListTrainerReviewsUseCase } from '@/domain/reviews/application/use-cases/list-trainer-reviews'
+import { GetMyTrainerReviewUseCase } from '@/domain/reviews/application/use-cases/get-my-trainer-review'
+import { UpsertTrainerReviewUseCase } from '@/domain/reviews/application/use-cases/upsert-trainer-review'
 import {
   AdminLoginUseCase,
   CreateAdminUserUseCase,
@@ -45,15 +49,24 @@ import { PrismaAdminUsersRepository } from '@/infra/database/prisma/repositories
 import { PrismaAdminReportsRepository } from '@/infra/database/prisma/repositories/prisma-admin-reports-repository'
 import { PrismaAdminImpersonationLogsRepository } from '@/infra/database/prisma/repositories/prisma-admin-impersonation-logs-repository'
 import { ListRecentImpersonationAccessUseCase } from '@/domain/admin/application/use-cases/admin-impersonation-use-cases'
+import {
+  CreateAdminUserNoteUseCase,
+  GetAdminUserDetailUseCase,
+  ListAdminUserActivityUseCase,
+  ListAdminUserNotesUseCase,
+} from '@/domain/admin/application/use-cases/admin-user-profile-use-cases'
+import { PrismaAdminUserProfileRepository } from '@/infra/database/prisma/repositories/prisma-admin-user-profile-repository'
 
 const trainersRepository = new PrismaPersonalTrainersRepository()
 const usersRepository = new PrismaUsersRepository()
 const sessionsRepository = new PrismaSessionsRepository()
 const favoritesRepository = new PrismaFavoritesRepository()
 const reportsRepository = new PrismaReportsRepository()
+const reviewsRepository = new PrismaReviewsRepository()
 const adminUsersRepository = new PrismaAdminUsersRepository()
 const adminReportsRepository = new PrismaAdminReportsRepository()
 const adminImpersonationLogsRepository = new PrismaAdminImpersonationLogsRepository()
+const adminUserProfileRepository = new PrismaAdminUserProfileRepository()
 
 export function makeListPersonalTrainersUseCase() {
   return new ListPersonalTrainersUseCase(trainersRepository)
@@ -135,6 +148,18 @@ export function makeCreateReportUseCase() {
   return new CreateReportUseCase(reportsRepository, trainersRepository)
 }
 
+export function makeListTrainerReviewsUseCase() {
+  return new ListTrainerReviewsUseCase(reviewsRepository)
+}
+
+export function makeGetMyTrainerReviewUseCase() {
+  return new GetMyTrainerReviewUseCase(reviewsRepository)
+}
+
+export function makeUpsertTrainerReviewUseCase() {
+  return new UpsertTrainerReviewUseCase(reviewsRepository, trainersRepository)
+}
+
 export function makeAdminLoginUseCase() {
   return new AdminLoginUseCase(usersRepository)
 }
@@ -156,7 +181,27 @@ export function makeToggleTrainerFeaturedUseCase() {
 }
 
 export function makeImpersonateUserUseCase() {
-  return new ImpersonateUserUseCase(adminUsersRepository, adminImpersonationLogsRepository)
+  return new ImpersonateUserUseCase(
+    adminUsersRepository,
+    adminImpersonationLogsRepository,
+    adminUserProfileRepository,
+  )
+}
+
+export function makeGetAdminUserDetailUseCase() {
+  return new GetAdminUserDetailUseCase(adminUsersRepository, adminUserProfileRepository)
+}
+
+export function makeListAdminUserActivityUseCase() {
+  return new ListAdminUserActivityUseCase(adminUsersRepository, adminUserProfileRepository)
+}
+
+export function makeListAdminUserNotesUseCase() {
+  return new ListAdminUserNotesUseCase(adminUsersRepository, adminUserProfileRepository)
+}
+
+export function makeCreateAdminUserNoteUseCase() {
+  return new CreateAdminUserNoteUseCase(adminUsersRepository, adminUserProfileRepository)
 }
 
 export function makeListRecentImpersonationAccessUseCase() {

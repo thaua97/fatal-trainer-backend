@@ -19,6 +19,7 @@ import type {
 import type { TrainerPromotion } from '@/domain/catalog/enterprise/entities/personal-trainer'
 import type { AdminUsersRepository } from '../repositories/admin-users-repository'
 import type { AdminImpersonationLogsRepository } from '../repositories/admin-impersonation-logs-repository'
+import type { AdminUserProfileRepository } from '../repositories/admin-user-profile-repository'
 
 export class AdminLoginUseCase {
   constructor(private readonly usersRepository: UsersRepository) {}
@@ -120,6 +121,7 @@ export class ImpersonateUserUseCase {
   constructor(
     private readonly adminUsersRepository: AdminUsersRepository,
     private readonly logsRepository: AdminImpersonationLogsRepository,
+    private readonly profileRepository?: AdminUserProfileRepository,
   ) {}
 
   async execute(adminUserId: string, targetUserId: string): Promise<AuthUser> {
@@ -131,11 +133,23 @@ export class ImpersonateUserUseCase {
       throw new ForbiddenError()
     }
 
+    const admin = await this.adminUsersRepository.findById(adminUserId)
+
     await this.logsRepository.create({
       adminUserId,
       targetUserId: user.id,
       targetName: user.name,
       targetRole: user.role,
+    })
+
+    await this.profileRepository?.appendActivity({
+      userId: user.id,
+      type: 'admin_impersonation',
+      title: 'Acesso como usuário',
+      description: admin ? `${admin.name} acessou a conta deste usuário` : undefined,
+      actorId: adminUserId,
+      actorName: admin?.name,
+      actorRole: admin?.role ?? 'admin',
     })
 
     return {

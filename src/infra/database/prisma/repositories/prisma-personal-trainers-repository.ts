@@ -19,8 +19,18 @@ export class PrismaPersonalTrainersRepository implements PersonalTrainersReposit
   }
 
   async findById(id: string): Promise<PersonalTrainer | null> {
-    const record = await prisma.personalTrainer.findUnique({ where: { id } })
-    return record ? mapTrainerToDomain(record) : null
+    const record = await prisma.personalTrainer.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: { is_active: true },
+        },
+      },
+    })
+
+    return record
+      ? mapTrainerToDomain(record, { isActive: record.user?.is_active ?? true })
+      : null
   }
 
   async findByUserId(userId: string): Promise<PersonalTrainer | null> {

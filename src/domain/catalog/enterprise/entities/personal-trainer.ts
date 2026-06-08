@@ -38,6 +38,7 @@ export interface PersonalTrainerProps {
   reviews?: TrainerReview[]
   featured?: boolean
   promotion?: TrainerPromotion
+  isActive?: boolean
 }
 
 export class PersonalTrainer {
@@ -86,6 +87,7 @@ export class PersonalTrainer {
       reviews: this.props.reviews,
       featured: this.props.featured,
       promotion: this.props.promotion,
+      isActive: this.props.isActive ?? true,
     }
   }
 }

@@ -5,10 +5,14 @@ import {
   makeAdminLoginUseCase,
   makeCreateAdminUserUseCase,
   makeCreateSessionUseCase,
+  makeCreateAdminUserNoteUseCase,
   makeDeactivateTrainerFromReportUseCase,
   makeDestroySessionUseCase,
+  makeGetAdminUserDetailUseCase,
   makeImpersonateUserUseCase,
   makeListAdminReportsUseCase,
+  makeListAdminUserActivityUseCase,
+  makeListAdminUserNotesUseCase,
   makeListAdminUsersUseCase,
   makeListRecentImpersonationAccessUseCase,
   makeToggleTrainerFeaturedUseCase,
@@ -63,6 +67,15 @@ const listRecentAccessSchema = z.object({
   limit: z.coerce.number().min(1).max(20).default(8),
 })
 
+const listActivitySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  pageSize: z.coerce.number().min(1).max(50).default(10),
+})
+
+const createNoteSchema = z.object({
+  content: z.string().min(1),
+})
+
 const listReportsSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   pageSize: z.coerce.number().min(1).max(100).default(20),
@@ -113,6 +126,60 @@ export async function adminRoutes(app: FastifyInstance) {
       const useCase = makeCreateAdminUserUseCase()
       const user = await useCase.execute(body)
       return reply.status(201).send({ user })
+    } catch (error) {
+      const mapped = mapErrorToResponse(error)
+      return reply.status(mapped.statusCode).send(mapped.body)
+    }
+  })
+
+  app.get('/admin/users/:id', async (request, reply) => {
+    try {
+      await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const useCase = makeGetAdminUserDetailUseCase()
+      const user = await useCase.execute(id)
+      return reply.send({ user })
+    } catch (error) {
+      const mapped = mapErrorToResponse(error)
+      return reply.status(mapped.statusCode).send(mapped.body)
+    }
+  })
+
+  app.get('/admin/users/:id/activity', async (request, reply) => {
+    try {
+      await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const query = listActivitySchema.parse(request.query)
+      const useCase = makeListAdminUserActivityUseCase()
+      const result = await useCase.execute(id, query)
+      return reply.send(result)
+    } catch (error) {
+      const mapped = mapErrorToResponse(error)
+      return reply.status(mapped.statusCode).send(mapped.body)
+    }
+  })
+
+  app.get('/admin/users/:id/notes', async (request, reply) => {
+    try {
+      await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const useCase = makeListAdminUserNotesUseCase()
+      const result = await useCase.execute(id)
+      return reply.send(result)
+    } catch (error) {
+      const mapped = mapErrorToResponse(error)
+      return reply.status(mapped.statusCode).send(mapped.body)
+    }
+  })
+
+  app.post('/admin/users/:id/notes', async (request, reply) => {
+    try {
+      const admin = await requireAdminSession(request)
+      const { id } = request.params as { id: string }
+      const body = createNoteSchema.parse(request.body)
+      const useCase = makeCreateAdminUserNoteUseCase()
+      const result = await useCase.execute(id, admin.id, admin.name, body.content)
+      return reply.status(201).send(result)
     } catch (error) {
       const mapped = mapErrorToResponse(error)
       return reply.status(mapped.statusCode).send(mapped.body)

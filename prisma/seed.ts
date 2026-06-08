@@ -5,6 +5,7 @@ import pg from 'pg'
 import { generateMockTrainers } from '../src/utils/tests/factories/make-personal-trainer'
 import { mapTrainerToPrisma } from '../src/infra/database/prisma/mappers/prisma-mapper'
 import { seedUsers } from './seeds/users'
+import { seedReviewStudents, seedTrainerReviewsFromJson } from './seeds/reviews'
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
 const adapter = new PrismaPg(pool)
@@ -13,6 +14,7 @@ const prisma = new PrismaClient({ adapter })
 async function main() {
   const trainers = generateMockTrainers(500)
 
+  await prisma.trainerReview.deleteMany()
   await prisma.report.deleteMany()
   await prisma.favorite.deleteMany()
   await prisma.session.deleteMany()
@@ -28,6 +30,9 @@ async function main() {
       data: batch.map(mapTrainerToPrisma),
     })
   }
+
+  const studentUserIds = await seedReviewStudents(prisma)
+  await seedTrainerReviewsFromJson(prisma, studentUserIds)
 
   console.log(`Seeded ${trainers.length} personal trainers`)
 }

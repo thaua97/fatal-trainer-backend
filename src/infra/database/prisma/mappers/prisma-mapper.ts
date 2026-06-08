@@ -42,7 +42,10 @@ export function mapRoleToPrismaEnum(role: UserRole): PrismaUserRole {
   return mapRoleToPrisma(role)
 }
 
-export function mapTrainerToDomain(record: PrismaTrainer): PersonalTrainer {
+export function mapTrainerToDomain(
+  record: PrismaTrainer,
+  options?: { isActive?: boolean },
+): PersonalTrainer {
   const props: PersonalTrainerProps = {
     userId: record.user_id ?? undefined,
     name: record.name,
@@ -65,6 +68,7 @@ export function mapTrainerToDomain(record: PrismaTrainer): PersonalTrainer {
     reviews: (record.reviews as TrainerReview[] | null) ?? undefined,
     featured: record.featured,
     promotion: (record.promotion as TrainerPromotion | null) ?? undefined,
+    isActive: options?.isActive ?? true,
   }
 
   return PersonalTrainer.restore(record.id, props)

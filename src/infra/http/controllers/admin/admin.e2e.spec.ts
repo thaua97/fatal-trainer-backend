@@ -68,4 +68,40 @@ describe('Admin E2E', () => {
     expect(response.body.items).toBeDefined()
     expect(response.body.total).toBeGreaterThan(0)
   })
+
+  it('GET /api/admin/users/:id returns user profile detail', async () => {
+    const login = await request(app.server)
+      .post('/api/admin/auth/login')
+      .send({ email: 'admin-test@fataltrainer.com', password: 'Admin@Fatal2026!' })
+
+    const cookie = login.headers['set-cookie']
+    const list = await request(app.server)
+      .get('/api/admin/users')
+      .set('Cookie', cookie!)
+
+    const userId = list.body.items[0].id
+
+    const detail = await request(app.server)
+      .get(`/api/admin/users/${userId}`)
+      .set('Cookie', cookie!)
+
+    expect(detail.statusCode).toBe(200)
+    expect(detail.body.user.id).toBe(userId)
+    expect(detail.body.user.notesCount).toBeDefined()
+    expect(detail.body.user.activityCount).toBeDefined()
+
+    const activity = await request(app.server)
+      .get(`/api/admin/users/${userId}/activity`)
+      .set('Cookie', cookie!)
+
+    expect(activity.statusCode).toBe(200)
+    expect(activity.body.items).toBeDefined()
+
+    const notes = await request(app.server)
+      .get(`/api/admin/users/${userId}/notes`)
+      .set('Cookie', cookie!)
+
+    expect(notes.statusCode).toBe(200)
+    expect(notes.body.items).toBeDefined()
+  })
 })

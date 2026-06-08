@@ -8,6 +8,7 @@ import { env } from '@/env'
 import { personalTrainersRoutes } from '@/infra/http/controllers/personal-trainers/list-trainers.controller'
 import { myTrainerRoutes } from '@/infra/http/controllers/personal-trainers/my-trainer.controller'
 import { bookmakersRoutes } from '@/infra/http/controllers/personal-trainers/bookmakers.controller'
+import { trainerReviewsRoutes } from '@/infra/http/controllers/personal-trainers/trainer-reviews.controller'
 import { authRoutes } from '@/infra/http/controllers/auth/auth.controller'
 import { reportsRoutes } from '@/infra/http/controllers/reports/reports.controller'
 import { adminRoutes } from '@/infra/http/controllers/admin/admin.controller'
@@ -30,6 +31,7 @@ app.register(fastifyMultipart, {
 app.register(async (api) => {
   await api.register(myTrainerRoutes)
   await api.register(bookmakersRoutes)
+  await api.register(trainerReviewsRoutes)
   await api.register(personalTrainersRoutes)
   await api.register(authRoutes)
   await api.register(reportsRoutes)
