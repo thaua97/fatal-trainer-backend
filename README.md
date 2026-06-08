@@ -4,7 +4,9 @@ API REST do catálogo Fatal Trainer — Node.js, TypeScript, Fastify, Prisma e P
 
 Backend complementar ao front-end Nuxt do [desafio técnico Atlas Technologies](../fatal-trainer/docs/challenge.md). Fornece os **500 personal trainers** exigidos pelo desafio, com busca, filtros, ordenação e paginação server-side consumidos pelo front em [`fatal-trainer`](../fatal-trainer/).
 
-> **Demo:** _link da solução publicada — a preencher_
+> **Demo (front-end):** [https://fatal-trainer.vercel.app/](https://fatal-trainer.vercel.app/)
+>
+> **API (produção):** [https://fatal-trainer-backend.onrender.com/api](https://fatal-trainer-backend.onrender.com/api)
 >
 > **Vídeo de apresentação:** _link do vídeo (máx. 5 min) — a preencher_
 
@@ -79,6 +81,24 @@ pnpm dev
 ```
 
 Documentação completa da integração: [`fatal-trainer/docs/specs/api-integration-frontend.md`](../fatal-trainer/docs/specs/api-integration-frontend.md).
+
+### Produção (Render)
+
+Deploy via [`render.yaml`](render.yaml). O front Nuxt na Vercel aponta para esta API.
+
+| Ambiente | URL |
+|----------|-----|
+| API REST (base) | [https://fatal-trainer-backend.onrender.com/api](https://fatal-trainer-backend.onrender.com/api) |
+| Health check / listagem | [https://fatal-trainer-backend.onrender.com/api/personal-trainers?page=1&pageSize=1](https://fatal-trainer-backend.onrender.com/api/personal-trainers?page=1&pageSize=1) |
+| Front-end | [https://fatal-trainer.vercel.app/](https://fatal-trainer.vercel.app/) |
+
+Variáveis no front (Vercel):
+
+```env
+NUXT_PUBLIC_API_BASE_URL=https://fatal-trainer-backend.onrender.com/api
+NUXT_PUBLIC_ASSETS_BASE_URL=https://fatal-trainer-backend.onrender.com
+NUXT_PUBLIC_USE_MOCK_API=false
+```
 
 ### Scripts disponíveis
 
@@ -235,10 +255,11 @@ O comando `npm run db:seed` popula:
 - **500 personal trainers** com nomes, especialidades, preços, cidades e fotos (Pexels)
 - Usuários de teste, templates de promoção e avaliações
 
-Senha padrão para todos: `123456`
+Senha padrão (aluno/personal): `123456` — admin: `Admin@Fatal2026!`
 
 | Email | Role | Perfil no catálogo |
 |-------|------|--------------------|
+| admin@fataltrainer.com | admin | — |
 | aluno@fataltrainer.com | student | — |
 | maria@fataltrainer.com | student | — |
 | personal@fataltrainer.com | personal-trainer | sim |
