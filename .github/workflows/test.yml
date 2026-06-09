@@ -1,0 +1,46 @@
+name: Test
+
+on:
+  workflow_call:
+
+env:
+  PNPM_VERSION: '9'
+  NODE_ENV: test
+  PORT: 3333
+  JWT_SECRET: ci-secret
+  UPLOAD_DIR: ./uploads
+  STORAGE_DRIVER: local
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    container:
+      image: bitnami/node:24
+    services:
+      postgres:
+        image: bitnami/postgresql:latest
+        env:
+          POSTGRESQL_USERNAME: docker
+          POSTGRESQL_PASSWORD: docker
+          POSTGRESQL_DATABASE: fatal_trainer
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U docker -d fatal_trainer"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://docker:docker@postgres:5432/fatal_trainer
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable pnpm
+        run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit and e2e tests
+        run: pnpm test:all
