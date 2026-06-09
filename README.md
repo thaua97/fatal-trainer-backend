@@ -327,6 +327,8 @@ Todas as decisões de arquitetura, modelagem de domínio e revisão final do có
 
 ## Documentação adicional
 
+- [RFCs — decisões arquiteturais](docs/rfc.md)
+- [RFCs do front-end](../fatal-trainer/docs/rfc.md)
 - [README do front-end](../fatal-trainer/README.md)
 - [Integração front ↔ API](../fatal-trainer/docs/specs/api-integration-frontend.md)
 - [Desafio técnico (challenge)](../fatal-trainer/docs/challenge.md)
