@@ -11,7 +11,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     container:
-      image: bitnami/node:24
+      image: bitnamilegacy/node:24.7.0
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +19,7 @@ jobs:
         run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Generate Prisma client
         run: pnpm exec prisma generate

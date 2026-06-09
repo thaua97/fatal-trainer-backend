@@ -16,10 +16,10 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     container:
-      image: bitnami/node:24
+      image: bitnamilegacy/node:24.7.0
     services:
       postgres:
-        image: bitnami/postgresql:latest
+        image: bitnamilegacy/postgresql:16
         env:
           POSTGRESQL_USERNAME: docker
           POSTGRESQL_PASSWORD: docker
